@@ -1,0 +1,52 @@
+# Runs postgres and pgadmin images on 5432 and 5050 ports respectively
+version: "3.9"
+services:
+  postgres:
+    container_name: postgres_container
+    image: postgres:13.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4:5.6
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+
+    ports:
+      - "5050:80"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+    postgres:
+      driver: local
+      driver_opts:
+        type: none
+        o: bind
+        device: PATH_TO_THIS_DIR/postgres_data
+
+    pgadmin:
+        driver: local
+        driver_opts:
+          type: none
+          o: bind
+          device: PATH_TO_THIS_DIR/pgadmin_data
