@@ -1,3 +1,5 @@
+import hashlib
+import os
 import sqlite3
 from sqlite3 import Connection
 from typing import List, Set, Tuple
@@ -10,6 +12,12 @@ class Item:
 
     def __str__(self):
         return self.name
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
 
 class ProductionPlantType:
@@ -54,8 +62,22 @@ class Process:
 
 class FactorioStructure:
     def __init__(self):
+        if not os.path.exists('~checksum.md5'):
+            with open('~checksum.md5', 'w+'):
+                pass
+        with open('~checksum.md5', 'r+') as hash_file:
+            last_checksum = ''.join(hash_file.readlines())
+            hasher = hashlib.md5()
+            with open('init.sql', 'rb') as init_file:
+                for chunk in iter(lambda: init_file.read(4096), b""):
+                    hasher.update(chunk)
+            current_checksum = hasher.hexdigest()
+            hash_file.seek(0, 0)
+            hash_file.write(current_checksum)
+
         with sqlite3.connect('../factorio.db') as con:
-            self._init_db(con)
+            if last_checksum != current_checksum:
+                self._init_db(con)
             self.items: List[Item] = self._read_items(con)
             self.plant_types = self._read_plant_types(con)
             self.processes = self._read_processes(con, self.plant_types, self.items)
